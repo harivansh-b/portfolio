@@ -9,8 +9,8 @@ export const profile = {
 export const projects = [
   { name: 'TinyLink', type: 'SYSTEM / URL INFRASTRUCTURE', desc: 'A scalable URL shortening platform with aliases, QR codes, expiry, analytics, authentication, caching and rate limiting.', tech: ['React', 'FastAPI', 'PostgreSQL', 'Redis', 'Clerk'], url: 'https://github.com/harivansh-b/tinylink' },
   { name: 'Nexus Finance', type: 'PRODUCT / FINTECH', desc: 'A personal finance platform with budgeting, transaction tracking, analytics, crypto data and payment workflows.', tech: ['React', 'Express', 'MongoDB', 'Redis', 'Razorpay'], url: 'https://github.com/harivansh-b/Nexus-Finance' },
-  { name: 'Eventra', type: 'PRODUCT / EVENTS', desc: 'An event-focused software project.', tech: ['Web', 'Product'], url: 'https://github.com/harivansh-b/Eventra' },
-  { name: 'MedChain', type: 'EXPERIMENT / HEALTH', desc: 'A healthcare technology exploration.', tech: ['Systems', 'Web'], url: 'https://github.com/harivansh-b/MedChain' },
+  { name: 'Eventra', type: 'PRODUCT / EVENTS', desc: 'A full-stack event platform for creating, discovering, registering and checking in to events, with payments, notifications and organizer analytics.', tech: ['Vue.js', 'Java', 'Spring Boot', 'Tailwind', 'Razorpay', 'JWT'], url: 'https://github.com/harivansh-b/Eventra' },
+  { name: 'MedChain', type: 'SYSTEM / FEDERATED HEALTH AI', desc: 'A privacy-preserving medical-AI platform: hospitals train locally, verified model updates are aggregated, and contributions are recorded on-chain.', tech: ['React', 'FastAPI', 'MongoDB', 'Azure Blob', 'Solidity', 'FedAvg'], url: 'https://github.com/harivansh-b/MedChain' },
 ]
 
 export const skills = ['PYTHON','JAVASCRIPT','TYPESCRIPT','JAVA','C','SQL','REACT','NEXT.JS','TAILWIND','FASTAPI','EXPRESS','FLASK','POSTGRESQL','MONGODB','MYSQL','ORACLE','REDIS','KAFKA','DOCKER','GIT','LINUX','DSA','OOP','DBMS','OS','NETWORKS']
