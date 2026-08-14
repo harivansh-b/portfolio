@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback } from 'react'
+import { Rocket, Zap } from 'lucide-react'
 
 /* ── Types ─────────────────────────────────────── */
 interface Vec2 { x: number; y: number }
@@ -292,15 +293,20 @@ export default function SpaceJam({ onClose, beep }: Props) {
         resize()
 
         // ── Input ──────────────────────────────────────
-        const onKey = (e: KeyboardEvent, down: boolean) => {
+        const onKeyDown = (e: KeyboardEvent) => {
             const s = stateRef.current; if (!s) return
-            s.keys[down ? 'add' : 'delete'](e.key)
-            if (down && (e.key === ' ' || e.key === 'ArrowUp')) s.shooting = true
-            if (!down && (e.key === ' ' || e.key === 'ArrowUp')) s.shooting = false
+            s.keys.add(e.key)
+            if (e.key === ' ' || e.key === 'ArrowUp') s.shooting = true
             if (['ArrowLeft', 'ArrowRight', ' ', 'ArrowUp'].includes(e.key)) e.preventDefault()
         }
-        window.addEventListener('keydown', e => onKey(e, true))
-        window.addEventListener('keyup', e => onKey(e, false))
+        const onKeyUp = (e: KeyboardEvent) => {
+            const s = stateRef.current; if (!s) return
+            s.keys.delete(e.key)
+            if (e.key === ' ' || e.key === 'ArrowUp') s.shooting = false
+        }
+        window.addEventListener('keydown', onKeyDown)
+        window.addEventListener('keyup', onKeyUp)
+
 
         // ── Grid starfield (static, pre-generated) ─────
         const stars = Array.from({ length: 80 }, () => ({
@@ -497,13 +503,13 @@ export default function SpaceJam({ onClose, beep }: Props) {
 
         return () => {
             cancelAnimationFrame(rafRef.current)
+            window.removeEventListener('keydown', onKeyDown)
+            window.removeEventListener('keyup', onKeyUp)
             window.removeEventListener('keydown', onKeyRestart)
-            // cleanup key listeners added inline above — swap approach
         }
     }, [initState])
 
-    // Touch controls handler refs
-    const shipYBottom = SHIP_Y_OFFSET
+
 
     return (
         <div className="modal-backdrop" role="presentation" onClick={onClose}>
@@ -518,7 +524,7 @@ export default function SpaceJam({ onClose, beep }: Props) {
                 <button className="close" onClick={onClose} style={{ position: 'absolute', top: 14, right: 14, zIndex: 10 }}>✕</button>
 
                 <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                    <span style={{ font: "10px 'DM Mono'", letterSpacing: '.12em', color: '#9eeaff' }}>🚀 SPACE JAM</span>
+                    <span style={{ font: "10px 'DM Mono'", letterSpacing: '.12em', color: '#9eeaff', display: 'flex', alignItems: 'center', gap: 7 }}><Rocket size={14} /> SPACE JAM</span>
                     <span style={{ font: "9px 'DM Mono'", color: '#6a8aac', letterSpacing: '.1em' }}>
                         ← → / A D  MOVE · SPACE  FIRE
                     </span>
@@ -568,7 +574,7 @@ export default function SpaceJam({ onClose, beep }: Props) {
                         onPointerLeave={() => { if (stateRef.current) stateRef.current.touchShoot = false }}
                         style={{ ...ctrlStyle, background: 'rgba(30,80,160,0.5)', color: '#9eeaff', minWidth: 80, flex: 1, maxWidth: 140 }}
                         aria-label="Fire"
-                    >🔥 FIRE</button>
+                    ><Zap size={13} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 5 }} />FIRE</button>
 
                     {/* Restart */}
                     <button

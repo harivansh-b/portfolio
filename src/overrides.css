@@ -29,6 +29,21 @@
   background: rgba(20, 33, 64, .7);
 }
 
+/* ─── Secondary button (View Resume) visibility ─────────────────── */
+.secondary {
+  background: rgba(14, 26, 55, 0.72);
+  border-color: #7eaee0 !important;
+  color: #cce5ff !important;
+  backdrop-filter: blur(6px);
+}
+
+.secondary:hover {
+  background: rgba(22, 40, 80, 0.88);
+  border-color: #aad6ff !important;
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(100, 180, 255, 0.18);
+}
+
 /* ─── Resume Modal ──────────────────────────────────────────────── */
 .resume-modal {
   position: relative;
@@ -540,8 +555,9 @@
 }
 
 .light-mode .secondary {
-  border-color: #3570a8;
-  color: #0c3460;
+  border-color: #2a5a8a;
+  color: #0a2a50;
+  background: rgba(190, 220, 245, 0.55);
 }
 
 .light-mode .scroll-note {
