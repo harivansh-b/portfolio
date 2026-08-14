@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowDown, ArrowUpRight, CodeXml, Link, Mail, Menu, X, ExternalLink, Moon, Sun, FileText, Volume2, VolumeX, Crosshair, Rocket, Phone, Calendar, User, Trophy, Code2 } from 'lucide-react'
+import { ArrowDown, ArrowUpRight, CodeXml, Link, Mail, Menu, X, ExternalLink, Moon, Sun, FileText, Volume2, VolumeX, Rocket, Phone, Calendar, User, Trophy, Code2 } from 'lucide-react'
+import SpaceJam from './SpaceJam'
 import { profile, projects, skills, education, achievements } from './data/profile'
 
 const nav = [['EARTH', 'hero'], ['ORIGIN', 'origin'], ['BRIEF', 'summary'], ['MISSIONS', 'missions'], ['ORBIT', 'projects'], ['TRACKS', 'skills'], ['MOON', 'moon']]
@@ -23,8 +24,6 @@ export default function App() {
     [light, setLight] = useState(false),
     [sound, setSound] = useState(false),
     [game, setGame] = useState(false),
-    [score, setScore] = useState(0),
-    [asteroids, setAsteroids] = useState([0, 1, 2, 3, 4, 5]),
     [contactName, setContactName] = useState(''),
     [contactEmail, setContactEmail] = useState(''),
     [contactPhone, setContactPhone] = useState(''),
@@ -47,7 +46,8 @@ export default function App() {
   const jump = (id: string) => { document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }); setMenu(false) }
   const beep = (pitch = 440) => { if (!sound) return; const audio = new AudioContext(), osc = audio.createOscillator(), gain = audio.createGain(); osc.type = 'sine'; osc.frequency.value = pitch; gain.gain.setValueAtTime(.025, audio.currentTime); gain.gain.exponentialRampToValueAtTime(.001, audio.currentTime + .1); osc.connect(gain).connect(audio.destination); osc.start(); osc.stop(audio.currentTime + .1) }
   const toggleSound = () => { if (sound) { audioRef.current?.pause(); setSound(false); return } const audio = audioRef.current ?? new Audio('https://opengameart.org/sites/default/files/magic%20space.mp3'); audio.loop = true; audio.volume = .18; audioRef.current = audio; audio.play().then(() => setSound(true)).catch(() => setSound(false)) }
-  const shoot = (id: number) => { setAsteroids(cur => cur.filter(x => x !== id)); setScore(cur => cur + 100); beep(840); setTimeout(() => setAsteroids(cur => [...cur, id]), 500) }
+
+
 
   const sendContact = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault(); setContactState('sending'); beep(760)
@@ -285,17 +285,7 @@ export default function App() {
       )}
 
       {/* ── Game modal ── */}
-      {game && (
-        <div className="modal-backdrop" role="presentation" onClick={() => setGame(false)}>
-          <section className="game-modal" role="dialog" aria-modal="true" aria-label="Space Jam asteroid game" onClick={e => e.stopPropagation()}>
-            <button className="close" onClick={() => setGame(false)}><X /></button>
-            <header><span><Rocket size={17} /> SPACE JAM</span><b>SCORE / {String(score).padStart(5, '0')}</b></header>
-            <p>AIM AT THE ASTEROIDS. CLICK TO FIRE.</p>
-            <div className="game-field">{asteroids.map((asteroid, index) => <button key={asteroid} className={'game-asteroid ga-' + index} onClick={() => shoot(asteroid)} aria-label="Destroy asteroid"><Crosshair size={18} /><i /></button>)}<div className="ship"><Rocket size={28} /><span /></div></div>
-            <footer><span>SHIELD / ONLINE</span><button onClick={() => { setScore(0); setAsteroids([0, 1, 2, 3, 4, 5]); beep(390) }}>RESET WAVE</button></footer>
-          </section>
-        </div>
-      )}
+      {game && <SpaceJam onClose={() => setGame(false)} beep={beep} />}
     </main>
   )
 }
