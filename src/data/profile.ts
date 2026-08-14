@@ -3,7 +3,12 @@ export const profile = {
   intro: 'Computer Science student building scalable systems, products and experiments across software engineering, distributed systems and AI.',
   github: 'https://github.com/harivansh-b', linkedin: 'https://linkedin.com/in/harivanshb/',
   email: 'mailto:bandaruharivansh@gmail.com',
-  
+  emailDisplay: 'bandaruharivansh@gmail.com',
+  phone: '+91 98765 43210',
+  phoneHref: 'tel:+919876543210',
+  bookingUrl: 'https://calendly.com/bandaruharivansh',
+  summary: 'Final-year Computer Science undergraduate at SSN College of Engineering (CGPA 9.20/10) with a passion for building reliable, high-performance software. Experienced in full-stack development, distributed systems, and federated machine learning. Currently interning at Barclays as an SDE, exploring observability, OpenTelemetry, and microservice architectures. ICPC Regionalist, Gold Medalist, and competitive programmer with ratings across LeetCode, Codeforces, and CodeChef.',
+
 }
 
 export const projects = [
@@ -13,7 +18,7 @@ export const projects = [
   { name: 'MedChain', type: 'SYSTEM / FEDERATED HEALTH AI', desc: 'A privacy-preserving medical-AI platform: hospitals train locally, verified model updates are aggregated, and contributions are recorded on-chain.', tech: ['React', 'FastAPI', 'MongoDB', 'Azure Blob', 'Solidity', 'FedAvg'], url: 'https://github.com/harivansh-b/MedChain' },
 ]
 
-export const skills = ['PYTHON','JAVASCRIPT','TYPESCRIPT','JAVA','C','SQL','REACT','NEXT.JS','TAILWIND','FASTAPI','EXPRESS','FLASK','POSTGRESQL','MONGODB','MYSQL','ORACLE','REDIS','KAFKA','DOCKER','GIT','LINUX','DSA','OOP','DBMS','OS','NETWORKS']
+export const skills = ['PYTHON', 'JAVASCRIPT', 'TYPESCRIPT', 'JAVA', 'C', 'SQL', 'REACT', 'NEXT.JS', 'TAILWIND', 'FASTAPI', 'EXPRESS', 'FLASK', 'POSTGRESQL', 'MONGODB', 'MYSQL', 'ORACLE', 'REDIS', 'KAFKA', 'DOCKER', 'GIT', 'LINUX', 'DSA', 'OOP', 'DBMS', 'OS', 'NETWORKS']
 
 export const education = [
   { institution: 'SSN College of Engineering', place: 'Chennai, India', program: 'B.E. Computer Science and Engineering', score: 'CGPA 9.20 / 10', period: '2023 - 2027' },
