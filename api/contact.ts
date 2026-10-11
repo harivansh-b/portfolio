@@ -161,7 +161,7 @@ export default async function handler(request: VercelRequest, res: VercelRespons
   if (request.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
 
   const key = process.env.BREVO_API_KEY
-  const from = process.env.BREVO_MAIL_FROM_EMAIL
+  const from = process.env.BREVO_MAIL_FROM_EMAIL ?? process.env.BREVO_SENDER_EMAIL
   const recipient = process.env.CONTACT_RECIPIENT_EMAIL ?? from
   if (!key || !from || !recipient) return res.status(503).json({ error: 'Email service is not configured.' })
 
