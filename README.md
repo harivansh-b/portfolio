@@ -75,6 +75,17 @@ Never prefix secrets with `VITE_`, commit them, or place them in frontend files.
 
 The footer and contact section show a visitor count from `api/visits.ts` (one count per browser session). It needs a free Upstash Redis database: in Vercel, open **Storage → Marketplace → Upstash (Redis)** and connect it to this project, which injects `KV_REST_API_URL` / `KV_REST_API_TOKEN` (or set `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` yourself). Until then the counter simply stays hidden.
 
+## Link preview image
+
+`public/og-image.png` is a real 1200×630 screenshot of the hero, used by LinkedIn, WhatsApp and X link cards. After changing the hero, regenerate it:
+
+```bash
+npm run build && npm run preview   # serves http://localhost:4173
+npm run og                         # in a second terminal
+```
+
+After deploying, refresh LinkedIn's cache at https://www.linkedin.com/post-inspector/.
+
 ## Project data
 
 Profile, project, experience, education, skill groups, competitive-programming and achievement content lives in `src/data/profile.ts`. Keep this content sourced from the résumé or project repositories.
