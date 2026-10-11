@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "og": "node scripts/og-image.mjs"
   },
   "dependencies": {
     "@vercel/analytics": "1.4.1",
