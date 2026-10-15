@@ -156,25 +156,49 @@ export const experience = [
   },
 ]
 
-export type Club = { org: string; name: string; badge: string; logo?: string; wide?: boolean; zoom?: number; tenure?: string; roles: { title: string; period?: string; duration?: string }[] }
+/* Months are 'YYYY-MM'; a role without `end` is current. Periods and durations are derived like LinkedIn
+   (inclusive month count), so they stay correct without editing. */
+export type ClubRole = { title: string; start: string; end?: string }
+export type Club = { org: string; name: string; badge: string; logo?: string; wide?: boolean; zoom?: number; roles: ClubRole[] }
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+const parseMonth = (ym: string) => { const [y, m] = ym.split('-').map(Number); return { y, m } }
+const nowMonth = () => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() + 1 } }
+const label = (ym: string) => { const { y, m } = parseMonth(ym); return `${MONTHS[m - 1]} ${y}` }
+const monthsBetween = (start: string, end?: string) => {
+  const a = parseMonth(start), b = end ? parseMonth(end) : nowMonth()
+  return Math.max(1, (b.y - a.y) * 12 + (b.m - a.m) + 1)
+}
+export const formatDuration = (months: number) => {
+  const y = Math.floor(months / 12), m = months % 12
+  return [y && `${y} yr${y > 1 ? 's' : ''}`, m && `${m} mo${m > 1 ? 's' : ''}`].filter(Boolean).join(' ')
+}
+export const rolePeriod = (r: ClubRole) => `${label(r.start)} – ${r.end ? label(r.end) : 'Present'}`
+export const roleDuration = (r: ClubRole) => formatDuration(monthsBetween(r.start, r.end))
+/* Total time with the club: earliest start to latest end (or present). */
+export const clubTenure = (c: Club) => {
+  const start = c.roles.map(r => r.start).sort()[0]
+  const end = c.roles.some(r => !r.end) ? undefined : c.roles.map(r => r.end!).sort().at(-1)
+  return formatDuration(monthsBetween(start, end))
+}
 
 /* Mirrors the LinkedIn Experience layout. Most significant first; roles most recent first. */
 export const leadership: Club[] = [
-  { org: 'NetSy', name: 'NetSy · Networks and Student Research Chapter, SSN', badge: 'NS', logo: '/logos/clubs/netsy.png', zoom: 1.7, roles: [{ title: 'President' }] },
+  { org: 'NetSy', name: 'NetSy · Networks and Student Research Chapter, SSN', badge: 'NS', logo: '/logos/clubs/netsy.png', zoom: 1.7, roles: [{ title: 'President', start: '2026-07' }] },
   {
-    org: 'CSI SSN', name: 'Computer Society of India SSN', badge: 'CSI', logo: '/logos/clubs/csi.jpg', tenure: '1 yr 4 mos',
-    roles: [{ title: 'Webmaster', period: 'Aug 2026 – Present', duration: '3 mos' }, { title: 'Technical Team Member', period: 'Jul 2025 – Aug 2026', duration: '1 yr 2 mos' }],
+    org: 'CSI SSN', name: 'Computer Society of India SSN', badge: 'CSI', logo: '/logos/clubs/csi.jpg',
+    roles: [{ title: 'Webmaster', start: '2026-08' }, { title: 'Technical Team Member', start: '2025-07', end: '2026-08' }],
   },
   {
-    org: 'ACE SSN', name: 'Association of Computer Engineers, SSN', badge: 'ACE', logo: '/logos/clubs/ace.png', tenure: '2 yrs 4 mos',
+    org: 'ACE SSN', name: 'Association of Computer Engineers, SSN', badge: 'ACE', logo: '/logos/clubs/ace.png',
     roles: [
-      { title: 'Event Head', period: 'Jul 2026 – Present', duration: '4 mos' },
-      { title: 'Event Organizer', period: 'Jul 2025 – Jul 2026', duration: '1 yr 1 mo' },
-      { title: 'Event Volunteer', period: 'Jul 2024 – Jul 2025', duration: '1 yr 1 mo' },
+      { title: 'Event Head', start: '2026-07' },
+      { title: 'Event Organizer', start: '2025-07', end: '2026-07' },
+      { title: 'Event Volunteer', start: '2024-07', end: '2025-07' },
     ],
   },
-  { org: 'SSN Coding Club', name: 'SSN Coding Club · Competitive Programming Vertical', badge: 'CC', logo: '/logos/clubs/ssn-coding-club.png', roles: [{ title: 'Deputy Lead, CP Vertical' }] },
-  { org: 'IEEE CIS SSN', name: 'IEEE Computational Intelligence Society, SSN', badge: 'CIS', logo: '/logos/clubs/ieee-cis.png', wide: true, roles: [{ title: 'Students & Alumni Representative Head' }] },
+  { org: 'SSN Coding Club', name: 'SSN Coding Club · Competitive Programming Vertical', badge: 'CC', logo: '/logos/clubs/ssn-coding-club.png', roles: [{ title: 'Deputy Lead, CP Vertical', start: '2025-07' }] },
+  { org: 'IEEE CIS SSN', name: 'IEEE Computational Intelligence Society, SSN', badge: 'CIS', logo: '/logos/clubs/ieee-cis.png', wide: true, roles: [{ title: 'Student Placement & Alumni Representative Executive', start: '2026-07' }] },
 ]
 
 export type CodingProfile = {
