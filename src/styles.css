@@ -467,6 +467,18 @@ a.card:hover, button.card:hover { border-color: var(--line-strong); background: 
 .visit-pill b { font-weight: 500; color: var(--ink); font-variant-numeric: tabular-nums; }
 @media (max-width: 420px) { .visit-pill { padding: 0 9px; gap: 5px; font-size: 11px; } }
 
+/* ── space cursor: public-domain "Space Theme" set by nightklp (public/cursors/CREDITS.txt) + stardust canvas ── */
+html.space-cursor, html.space-cursor * { cursor: url('/cursors/space-default.png') 0 0, auto !important; }
+html.space-cursor :is(a, button, [role="tab"], label, summary, select, .card, [data-tip]),
+html.space-cursor :is(a, button, [role="tab"], label, summary, select, .card, [data-tip]) * { cursor: url('/cursors/space-pointer.png') 4 0, pointer !important; }
+html.space-cursor :is(input, textarea, [contenteditable="true"]) { cursor: url('/cursors/space-text.png') 15 15, text !important; }
+html.space-cursor :is(button:disabled, button:disabled *) { cursor: url('/cursors/space-unavailable.png') 24 13, not-allowed !important; }
+html.space-cursor .form .btn:disabled, html.space-cursor .form .btn:disabled * { cursor: url('/cursors/space-progress.png') 8 1, progress !important; }
+html.space-cursor .game-stage, html.space-cursor .game-stage canvas { cursor: url('/cursors/space-crosshair.png') 15 16, crosshair !important; }
+html.space-cursor .game-stage button, html.space-cursor .game-stage button * { cursor: url('/cursors/space-pointer.png') 4 0, pointer !important; }
+.cursor-trail { position: fixed; inset: 0; z-index: 400; width: 100%; height: 100%; pointer-events: none; }
+html:not(.space-cursor) .cursor-trail { display: none; }
+
 /* ── tooltip ── */
 .tooltip { position: fixed; z-index: 300; pointer-events: none; max-width: min(280px, calc(100vw - 24px)); padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line-strong); background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); color: var(--ink); font: 500 11.5px var(--sans); letter-spacing: .01em; line-height: 1.35; text-align: center; white-space: normal; box-shadow: 0 10px 30px rgba(0, 0, 0, .35); transform: translate(-50%, -100%); animation: tip-in .16s ease-out; }
 .tooltip::after { content: ''; position: absolute; left: 50%; bottom: -5px; width: 8px; height: 8px; translate: -50% 0; rotate: 45deg; background: inherit; border-right: 1px solid var(--line-strong); border-bottom: 1px solid var(--line-strong); }

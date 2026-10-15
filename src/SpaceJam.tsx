@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Bomb, Pause, Play, RotateCcw, Rocket, X } from 'lucide-react'
+import { Bomb, Crosshair, Pause, Play, RotateCcw, Rocket, Shield, Trophy, X, Zap } from 'lucide-react'
 
 /* ── Space Jam v2 ──────────────────────────────────
    Waves of splitting asteroids, UFOs that shoot back, a boss every fifth wave,
@@ -38,6 +38,8 @@ class Game {
   combo = 1; comboTimer = 0
   toSpawn = 0; spawnTimer = 0; ufoTimer = 0; banner = 0; bannerText = ''
   cooldown = 0; shake = 0; time = 0; newBest = false
+  /* run stats for the debrief screen */
+  shots = 0; hits = 0; kills = 0; maxCombo = 1; playTime = 0; hurt = 0
   keys = new Set<string>(); firing = false
   pointer: { x: number; y: number } | null = null
 
@@ -46,7 +48,7 @@ class Game {
   resetShip() { this.ship = { x: this.w / 2, y: this.h - 70, vx: 0, vy: 0, inv: 2, shield: 0, triple: 0, rapid: 0 } }
 
   start() {
-    Object.assign(this, { score: 0, lives: 3, bombs: 1, wave: 0, combo: 1, comboTimer: 0, newBest: false, bullets: [], enemyBullets: [], asteroids: [], ufos: [], boss: null, powerups: [], floaters: [] })
+    Object.assign(this, { score: 0, lives: 3, bombs: 1, wave: 0, combo: 1, comboTimer: 0, newBest: false, bullets: [], enemyBullets: [], asteroids: [], ufos: [], boss: null, powerups: [], floaters: [], shots: 0, hits: 0, kills: 0, maxCombo: 1, playTime: 0, hurt: 0 })
     this.resetShip(); this.nextWave(); this.mode = 'playing'; this.beep(660); this.onChange()
   }
 
@@ -85,6 +87,7 @@ class Game {
     this.score += pts
     this.floaters.push({ x, y, text: `+${pts}${this.combo > 1 ? ` ×${this.combo}` : ''}`, life: 1, color: this.combo > 3 ? '#ffd166' : '#cfefff' })
     this.combo = Math.min(8, this.combo + (this.comboTimer > 0 ? 1 : 0)); this.comboTimer = 1.8
+    this.maxCombo = Math.max(this.maxCombo, this.combo)
   }
 
   maybeDrop(x: number, y: number, chance: number) {
@@ -108,7 +111,7 @@ class Game {
     const s = this.ship
     if (s.inv > 0) return
     if (s.shield > 0) { s.shield = 0; s.inv = 1; this.burst(s.x, s.y, 30, '#9cf1b3', 260); this.beep(300); return }
-    this.lives--; this.combo = 1; this.shake = 16; s.inv = 2.2
+    this.lives--; this.combo = 1; this.shake = 16; s.inv = 2.2; this.hurt = .6
     this.burst(s.x, s.y, 50, '#ff6b8b', 300, 4); this.beep(160)
     if (this.lives <= 0) {
       this.mode = 'over'
@@ -124,7 +127,9 @@ class Game {
     this.particles = this.particles.filter(p => { p.x += p.vx * dt; p.y += p.vy * dt; p.vx *= .97; p.vy *= .97; p.life -= dt; return p.life > 0 })
     this.floaters = this.floaters.filter(f => { f.y -= 40 * dt; f.life -= dt; return f.life > 0 })
     this.shake = Math.max(0, this.shake - dt * 40)
+    this.hurt = Math.max(0, this.hurt - dt)
     if (this.mode !== 'playing') return
+    this.playTime += dt
 
     const s = this.ship, W = this.w, H = this.h
     /* movement: keyboard, or follow pointer while dragging */
@@ -148,6 +153,7 @@ class Game {
     if ((this.firing || k.has(' ') || k.has('j') || this.pointer) && this.cooldown <= 0) {
       const spread = s.triple > 0 ? [-.16, 0, .16] : [0]
       for (const a of spread) this.bullets.push({ x: s.x + a * 30, y: s.y - 22, vx: Math.sin(a) * 700, vy: -Math.cos(a) * 700 })
+      this.shots += spread.length
       this.cooldown = s.rapid > 0 ? .085 : .19
       this.beep(s.rapid > 0 ? 980 : 820)
     }
@@ -213,8 +219,9 @@ class Game {
       for (let i = this.asteroids.length - 1; i >= 0; i--) {
         const a = this.asteroids[i]
         if ((bl.x - a.x) ** 2 + (bl.y - a.y) ** 2 < a.r * a.r) {
-          a.hp--; a.flash = .08; this.burst(bl.x, bl.y, 5, '#ffd9a0', 120, 2)
+          a.hp--; a.flash = .08; this.hits++; this.burst(bl.x, bl.y, 5, '#ffd9a0', 120, 2)
           if (a.hp <= 0) {
+            this.kills++
             this.asteroids.splice(i, 1); this.burst(a.x, a.y, 10 + a.tier * 8, '#ffb35c', 90 + a.tier * 50)
             this.shake = Math.max(this.shake, a.tier * 2.5)
             this.addScore(a.tier === 3 ? 20 : a.tier === 2 ? 50 : 100, a.x, a.y)
@@ -227,14 +234,15 @@ class Game {
       }
       for (const u of this.ufos) {
         if (Math.abs(bl.x - u.x) < 26 && Math.abs(bl.y - u.y) < 14) {
-          u.hp--; u.flash = .08
-          if (u.hp <= 0) { this.burst(u.x, u.y, 40, '#d7a2ff', 260, 4); this.shake = 8; this.addScore(300, u.x, u.y); this.maybeDrop(u.x, u.y, .6); this.beep(700) }
+          u.hp--; u.flash = .08; this.hits++
+          if (u.hp <= 0) { this.kills++; this.burst(u.x, u.y, 40, '#d7a2ff', 260, 4); this.shake = 8; this.addScore(300, u.x, u.y); this.maybeDrop(u.x, u.y, .6); this.beep(700) }
           return false
         }
       }
       if (b && b.enter >= 1 && ((bl.x - b.x) / 92) ** 2 + ((bl.y - b.y) / 36) ** 2 < 1) {
-        b.hp--; b.flash = .06; this.burst(bl.x, bl.y, 4, '#ff8fab', 140, 2)
+        b.hp--; b.flash = .06; this.hits++; this.burst(bl.x, bl.y, 4, '#ff8fab', 140, 2)
         if (b.hp <= 0) {
+          this.kills++
           this.burst(b.x, b.y, 220, '#ffd166', 520, 5); this.shake = 26; this.addScore(2500, b.x, b.y)
           for (let i = 0; i < 3; i++) this.maybeDrop(b.x + (i - 1) * 40, b.y, 1)
           this.boss = null; this.enemyBullets = []; this.beep(1200)
@@ -312,7 +320,6 @@ class Game {
     ctx.globalAlpha = 1
     ctx.restore()
 
-    this.drawHud(ctx)
   }
 
   drawShip(ctx: CanvasRenderingContext2D) {
@@ -388,49 +395,6 @@ class Game {
     ctx.restore()
   }
 
-  drawHud(ctx: CanvasRenderingContext2D) {
-    const W = this.w, H = this.h, s = this.ship
-    ctx.textBaseline = 'alphabetic'
-    ctx.font = "500 12px 'DM Mono', monospace"; ctx.textAlign = 'left'
-    ctx.fillStyle = '#8fe3ff'; ctx.fillText(`SCORE ${String(this.score).padStart(6, '0')}`, 16, 24)
-    ctx.fillStyle = '#7f8db0'; ctx.fillText(`BEST ${String(Math.max(this.best, this.score)).padStart(6, '0')}`, 16, 42)
-    if (this.combo > 1) { ctx.fillStyle = '#ffd166'; ctx.fillText(`COMBO ×${this.combo}`, 16, 60) }
-    ctx.textAlign = 'center'; ctx.fillStyle = '#9cf1b3'
-    if (this.wave) ctx.fillText(`WAVE ${this.wave}`, W / 2, 24)
-    ctx.textAlign = 'right'
-    ctx.fillStyle = '#ff6b8b'; ctx.fillText('♥'.repeat(Math.max(0, this.lives)), W - 16, 24)
-    ctx.fillStyle = '#ff9f43'; ctx.fillText(this.bombs ? `BOMB ×${this.bombs}` : '', W - 16, 42)
-    const timers: [number, number, string][] = [[s.triple, 10, POWER.triple.color], [s.rapid, 8, POWER.rapid.color], [s.shield, 9, POWER.shield.color]]
-    let y = 54
-    for (const [t, max, color] of timers) if (t > 0) { ctx.fillStyle = 'rgba(255,255,255,.1)'; ctx.fillRect(W - 96, y, 80, 4); ctx.fillStyle = color; ctx.fillRect(W - 96, y, 80 * t / max, 4); y += 9 }
-    if (this.boss) {
-      const bw = Math.min(360, W - 120)
-      ctx.fillStyle = 'rgba(255,255,255,.12)'; ctx.fillRect(W / 2 - bw / 2, 36, bw, 6)
-      ctx.fillStyle = this.boss.hp < this.boss.max * .5 ? '#ff4f86' : '#a493ff'; ctx.fillRect(W / 2 - bw / 2, 36, bw * Math.max(0, this.boss.hp) / this.boss.max, 6)
-    }
-    if (this.banner > 0 && this.mode === 'playing') {
-      ctx.globalAlpha = Math.min(1, this.banner); ctx.textAlign = 'center'
-      ctx.fillStyle = '#ffffff'; ctx.font = "600 30px 'Space Grotesk', sans-serif"; ctx.fillText(this.bannerText, W / 2, H * .42)
-      ctx.globalAlpha = 1
-    }
-    if (this.mode !== 'playing') {
-      ctx.fillStyle = 'rgba(3,7,25,.72)'; ctx.fillRect(0, 0, W, H)
-      ctx.textAlign = 'center'
-      const title = this.mode === 'title' ? 'SPACE JAM' : this.mode === 'paused' ? 'PAUSED' : 'MISSION FAILED'
-      ctx.fillStyle = this.mode === 'over' ? '#ff6b8b' : '#ffffff'
-      ctx.font = `600 ${Math.min(52, W / 10)}px 'Space Grotesk', sans-serif`; ctx.fillText(title, W / 2, H / 2 - 30)
-      ctx.font = "500 12px 'DM Mono', monospace"; ctx.fillStyle = '#8fe3ff'
-      if (this.mode === 'title') {
-        ctx.fillText('CLEAR THE BELT · SURVIVE THE MOTHERSHIP', W / 2, H / 2 + 4)
-        ctx.fillStyle = '#7f8db0'; ctx.fillText(`BEST ${this.best}`, W / 2, H / 2 + 26)
-        ctx.fillStyle = '#ffffff'; ctx.fillText(Math.floor(this.time * 2) % 2 ? 'PRESS ENTER OR TAP TO LAUNCH' : '', W / 2, H / 2 + 62)
-      } else if (this.mode === 'over') {
-        ctx.fillText(`SCORE ${this.score} · WAVE ${this.wave}`, W / 2, H / 2 + 4)
-        ctx.fillStyle = this.newBest ? '#ffd166' : '#7f8db0'; ctx.fillText(this.newBest ? 'NEW BEST SCORE!' : `BEST ${this.best}`, W / 2, H / 2 + 26)
-        ctx.fillStyle = '#ffffff'; ctx.fillText('PRESS ENTER OR TAP TO RETRY', W / 2, H / 2 + 62)
-      } else ctx.fillText('PRESS P OR TAP TO RESUME', W / 2, H / 2 + 4)
-    }
-  }
 }
 
 interface Props { onClose: () => void; beep: (pitch?: number) => void }
@@ -445,6 +409,7 @@ export default function SpaceJam({ onClose, beep }: Props) {
     const canvas = canvasRef.current!, ctx = canvas.getContext('2d')!
     const game = new Game(p => beepRef.current(p), () => force(n => n + 1))
     gameRef.current = game
+    force(n => n + 1) // render the title screen now that the game exists
     const resize = () => {
       const r = canvas.parentElement!.getBoundingClientRect(), dpr = Math.min(devicePixelRatio, 2)
       canvas.width = r.width * dpr; canvas.height = r.height * dpr
@@ -475,6 +440,13 @@ export default function SpaceJam({ onClose, beep }: Props) {
     canvas.addEventListener('pointerdown', pDown); canvas.addEventListener('pointermove', pMove)
     canvas.addEventListener('pointerup', pUp); canvas.addEventListener('pointercancel', pUp)
 
+    /* HUD is HTML: refresh it ~10x/s while playing (the canvas itself runs at full frame rate). */
+    const hud = window.setInterval(() => { if (game.mode === 'playing') force(n => n + 1) }, 100)
+    if (import.meta.env.DEV) {
+      const jam = new URLSearchParams(location.search).get('jam')
+      if (jam === 'play' || jam === 'over') game.start()
+      if (jam === 'over') Object.assign(game, { mode: 'over', score: 18450, wave: 7, kills: 64, shots: 210, hits: 151, maxCombo: 6, playTime: 187, newBest: true })
+    }
     let raf = 0, last = performance.now()
     const loop = (now: number) => {
       const dt = Math.min((now - last) / 1000, .05); last = now
@@ -483,13 +455,24 @@ export default function SpaceJam({ onClose, beep }: Props) {
     }
     raf = requestAnimationFrame(loop)
     return () => {
-      cancelAnimationFrame(raf); ro.disconnect()
+      cancelAnimationFrame(raf); clearInterval(hud); ro.disconnect()
       window.removeEventListener('keydown', onDown); window.removeEventListener('keyup', onUp); window.removeEventListener('blur', onBlur)
     }
   }, [])
 
   const g = gameRef.current
   const togglePause = () => { if (!g) return; if (g.mode === 'playing') g.mode = 'paused'; else if (g.mode === 'paused') g.mode = 'playing'; force(n => n + 1) }
+  const start = () => { g?.start(); canvasRef.current?.focus() }
+  const pad = (n: number) => String(n).padStart(6, '0')
+  const accuracy = g && g.shots ? Math.round((g.hits / g.shots) * 100) : 0
+  const time = g ? `${Math.floor(g.playTime / 60)}:${String(Math.floor(g.playTime % 60)).padStart(2, '0')}` : '0:00'
+  const powers = g ? ([
+    ['triple', 'Triple shot', g.ship.triple, 10, Crosshair],
+    ['rapid', 'Rapid fire', g.ship.rapid, 8, Zap],
+    ['shield', 'Shield', g.ship.shield, 9, Shield],
+  ] as const).filter(([, , t]) => t > 0) : []
+  const legendName: Record<Kind, string> = { triple: 'Triple', rapid: 'Rapid', shield: 'Shield', life: 'Life', bomb: 'Bomb' }
+
   return (
     <div className="modal-backdrop" role="presentation" onClick={onClose}>
       <section className="game-modal" role="dialog" aria-modal="true" aria-label="Space Jam arcade game" onClick={e => e.stopPropagation()}>
@@ -498,11 +481,118 @@ export default function SpaceJam({ onClose, beep }: Props) {
           <span className="game-keys">WASD / ARROWS MOVE · SPACE FIRE · B BOMB · P PAUSE · DRAG TO FLY</span>
           <button className="close" onClick={onClose} aria-label="Close game"><X size={18} /></button>
         </header>
-        <div className="game-stage"><canvas ref={canvasRef} /></div>
+
+        <div className="game-stage">
+          <canvas ref={canvasRef} tabIndex={-1} />
+
+          {g && g.mode !== 'title' && (
+            <div className="jam-hud" aria-live="off">
+              <div className="jam-score">
+                <span className="jam-label">SCORE</span>
+                <b>{pad(g.score)}</b>
+                <span className="jam-sub">BEST {pad(Math.max(g.best, g.score))}</span>
+                {g.combo > 1 && (
+                  <span className="jam-combo" style={{ '--c': g.comboTimer / 1.8 } as React.CSSProperties}>
+                    <b>×{g.combo}</b> COMBO<i />
+                  </span>
+                )}
+              </div>
+              <div className="jam-center">
+                <span className={'jam-wave' + (g.boss ? ' boss' : '')}>{g.boss ? 'MOTHERSHIP' : 'WAVE'} {g.wave}</span>
+                {g.boss && (
+                  <span className={'jam-boss' + (g.boss.hp < g.boss.max * .5 ? ' rage' : '')}>
+                    <i style={{ width: `${Math.max(0, g.boss.hp / g.boss.max) * 100}%` }} />
+                  </span>
+                )}
+              </div>
+              <div className="jam-right">
+                <span className="jam-lives" aria-label={`${g.lives} lives`}>
+                  {Array.from({ length: 5 }, (_, i) => <Rocket key={i} size={15} className={i < g.lives ? 'on' : i < 3 ? 'off' : 'hide'} />)}
+                </span>
+                <span className="jam-bombs" aria-label={`${g.bombs} bombs`}>
+                  {Array.from({ length: 3 }, (_, i) => <Bomb key={i} size={14} className={i < g.bombs ? 'on' : 'off'} />)}
+                </span>
+                {powers.length > 0 && (
+                  <span className="jam-powers">
+                    {powers.map(([k, name, t, max, Icon]) => (
+                      <span key={k} className={'jam-power ' + k}><Icon size={12} />{name}<i style={{ width: `${(t / max) * 100}%` }} /></span>
+                    ))}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {g && g.mode === 'playing' && g.banner > 0 && (
+            <div className="jam-banner" key={g.bannerText} style={{ opacity: Math.min(1, g.banner) }}>
+              <small>INCOMING</small>{g.bannerText}
+            </div>
+          )}
+          {g && g.hurt > 0 && <div className="jam-hurt" style={{ opacity: g.hurt / .6 }} />}
+
+          {g?.mode === 'title' && (
+            <div className="jam-screen">
+              <div className="jam-card">
+                <p className="jam-kicker">ARCADE · MISSION HB-02</p>
+                <h3 className="jam-logo">SPACE <span>JAM</span></h3>
+                <p className="jam-tag">Clear the asteroid belt, outgun the UFOs and survive the mothership every fifth wave.</p>
+                <div className="jam-controls">
+                  <span><kbd>WASD</kbd><kbd>Arrows</kbd> Move</span>
+                  <span><kbd>Space</kbd> Fire</span>
+                  <span><kbd>B</kbd> Bomb</span>
+                  <span><kbd>P</kbd> Pause</span>
+                  <span className="touch">Touch: drag to fly, auto-fire</span>
+                </div>
+                <div className="jam-legend">
+                  {(Object.keys(POWER) as Kind[]).map(k => (
+                    <span key={k} style={{ '--p': POWER[k].color } as React.CSSProperties}><b>{POWER[k].label}</b>{legendName[k]}</span>
+                  ))}
+                </div>
+                <button className="jam-btn primary" onClick={start}><Rocket size={16} />Launch mission</button>
+                {g.best > 0 && <p className="jam-best"><Trophy size={13} />Best {g.best.toLocaleString('en-US')}</p>}
+              </div>
+            </div>
+          )}
+
+          {g?.mode === 'paused' && (
+            <div className="jam-screen">
+              <div className="jam-card small">
+                <h3 className="jam-heading">Paused</h3>
+                <p className="jam-tag">Wave {g.wave} · {g.score.toLocaleString('en-US')} points</p>
+                <div className="jam-actions">
+                  <button className="jam-btn primary" onClick={togglePause}><Play size={16} />Resume</button>
+                  <button className="jam-btn" onClick={start}><RotateCcw size={16} />Restart</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {g?.mode === 'over' && (
+            <div className="jam-screen">
+              <div className="jam-card">
+                <p className="jam-kicker red">MISSION FAILED</p>
+                <h3 className="jam-final">{g.score.toLocaleString('en-US')}</h3>
+                {g.newBest ? <p className="jam-newbest"><Trophy size={14} />New best score!</p> : <p className="jam-tag">Best {g.best.toLocaleString('en-US')}</p>}
+                <dl className="jam-stats">
+                  <div><dt>Wave reached</dt><dd>{g.wave}</dd></div>
+                  <div><dt>Destroyed</dt><dd>{g.kills}</dd></div>
+                  <div><dt>Accuracy</dt><dd>{accuracy}%</dd></div>
+                  <div><dt>Best combo</dt><dd>×{g.maxCombo}</dd></div>
+                  <div><dt>Time survived</dt><dd>{time}</dd></div>
+                </dl>
+                <div className="jam-actions">
+                  <button className="jam-btn primary" onClick={start}><RotateCcw size={16} />Fly again</button>
+                  <button className="jam-btn" onClick={onClose}><X size={16} />Close</button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
         <footer>
           <button onClick={togglePause} disabled={!g || (g.mode !== 'playing' && g.mode !== 'paused')}>{g?.mode === 'paused' ? <Play size={14} /> : <Pause size={14} />}{g?.mode === 'paused' ? 'RESUME' : 'PAUSE'}</button>
           <button onClick={() => g?.useBomb()} disabled={!g || g.mode !== 'playing' || g.bombs <= 0}><Bomb size={14} />BOMB {g ? `×${g.bombs}` : ''}</button>
-          <button onClick={() => g?.start()}><RotateCcw size={14} />{g?.mode === 'title' ? 'START' : 'RESTART'}</button>
+          <button onClick={start}><RotateCcw size={14} />{g?.mode === 'title' ? 'START' : 'RESTART'}</button>
         </footer>
       </section>
     </div>

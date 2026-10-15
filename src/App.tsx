@@ -4,7 +4,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { ScrollSmoother } from 'gsap/ScrollSmoother'
 import { ArrowDown, ArrowUpRight, Calendar, ChevronDown, CodeXml, ExternalLink, Eye, FileText, Globe, Link, Mail, Medal, Menu, Moon, Rocket, Sun, Volume2, VolumeX, X } from 'lucide-react'
 import { journey, clamp } from './journey/state'
-import { profile, projects, skillGroups, education, achievements, experience, leadership, cp, PROJECT_CATEGORIES, type Project, type Club } from './data/profile'
+import { profile, projects, skillGroups, education, achievements, experience, leadership, cp, PROJECT_CATEGORIES, rolePeriod, roleDuration, clubTenure, type Project, type Club } from './data/profile'
 
 const Journey = lazy(() => import('./journey/Journey'))
 const SpaceJam = lazy(() => import('./SpaceJam'))
@@ -12,6 +12,7 @@ import { Logo } from './brand/logo'
 import { track } from '@vercel/analytics'
 import TechIcon from './components/TechIcon'
 import Tooltip from './components/Tooltip'
+import SpaceCursor from './components/SpaceCursor'
 
 gsap.registerPlugin(ScrollTrigger, ScrollSmoother)
 
@@ -162,6 +163,9 @@ export default function App() {
     document.fonts?.ready.then(() => ScrollTrigger.refresh())
     return () => { window.removeEventListener('pointermove', onPointer); ctx.revert(); smootherRef.current = null }
   }, [reducedMotion])
+
+  /* Dev only: `?jam=title|play|over` opens Space Jam straight away, for previewing its screens. */
+  useEffect(() => { if (import.meta.env.DEV && new URLSearchParams(location.search).has('jam')) setGame(true) }, [])
 
   /* Filtering changes the page height, so re-measure scroll positions. */
   useEffect(() => { const id = requestAnimationFrame(() => ScrollTrigger.refresh()); return () => cancelAnimationFrame(id) }, [filter, showAll])
@@ -372,12 +376,12 @@ export default function App() {
                       {l.roles.length > 1 ? (
                         <div className="li-body">
                           <h3>{l.name}</h3>
-                          {l.tenure && <p className="li-meta">{l.tenure}</p>}
+                          <p className="li-meta">{clubTenure(l)}</p>
                           <ol className="li-roles">
                             {l.roles.map(r => (
                               <li key={r.title}>
                                 <b>{r.title}</b>
-                                <span className="li-meta">{[r.period, r.duration].filter(Boolean).join(' · ')}</span>
+                                <span className="li-meta">{rolePeriod(r)} · {roleDuration(r)}</span>
                               </li>
                             ))}
                           </ol>
@@ -386,7 +390,7 @@ export default function App() {
                         <div className="li-body">
                           <h3>{l.roles[0].title}</h3>
                           <p className="li-org-name">{l.name}</p>
-                          {l.roles[0].period && <p className="li-meta">{[l.roles[0].period, l.roles[0].duration].filter(Boolean).join(' · ')}</p>}
+                          <p className="li-meta">{rolePeriod(l.roles[0])} · {roleDuration(l.roles[0])}</p>
                         </div>
                       )}
                     </article>
@@ -551,6 +555,7 @@ export default function App() {
       )}
 
       <Tooltip />
+      <SpaceCursor light={light} />
       {game && <Suspense fallback={null}><SpaceJam onClose={() => setGame(false)} beep={beep} /></Suspense>}
     </>
   )
